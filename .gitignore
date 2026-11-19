@@ -1,0 +1,18 @@
+# ESPHome / PlatformIO build output
+.esphome/
+.pio/
+.pioenvs/
+.piolibdeps/
+__pycache__/
+*.pyc
+
+# Secrets and personal data: never commit
+secrets.yaml
+**/secrets.yaml
+captures/
+*.log
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,74 @@
+# Remeha iSense RF replacement on a LilyGO T-Beam v1.2 (ESP32 + SX1276 868 MHz + AXP2101 PMU).
+#
+# Boots listen-only. To take over from the iSense display:
+#   1. Flash this with `display_template` commented out, keep the iSense display running, and watch the log.
+#      The component prints `display_template: "..."` for your kit. Paste it below (see docs/pairing.md).
+#   2. Remove the iSense batteries, then turn on the "RF master" switch.
+# The component never transmits within 120 s of hearing the real display.
+
+substitutions:
+  name: remeha-rf
+  friendly_name: Remeha RF
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  platformio_options:
+    upload_speed: 115200  # the CH9102 USB-serial on some T-Beams corrupts data at higher baud rates
+
+esp32:
+  board: ttgo-t-beam
+  framework:
+    type: arduino  # the component uses the Arduino SPI/Wire APIs
+
+external_components:
+  - source: github://Klievan/esphome-remeha-isense-rf@main  # or: {type: local, path: ../components}
+    components: [remeha_rf]
+
+logger:
+  level: DEBUG
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap: {}
+
+remeha_rf:
+  # display_template: !secret remeha_display_template  # 52 hex chars, printed in the log by this component
+  # frequency: 868.2925     # MHz; see docs/hardware.md (tune if your crystal is off)
+  # tx_power: 7             # dBm, 2..14 (868.0-868.6 MHz: 25 mW ERP limit)
+  # deviation: 20.0         # kHz
+  # poll_interval: 4400ms   # one exchange per interval, >= 1 s
+  # failsafe_timeout: 15min # CH enable dropped when no Home Assistant API client for this long (0 = off)
+  master:
+    name: RF master
+  ch_enable:
+    name: Central heating enable
+  dhw_enable:
+    name: Hot water enable
+  t_set:
+    name: Control setpoint
+  t_boiler:
+    name: Boiler flow temperature
+  t_ret:
+    name: Boiler return temperature
+  rel_mod_level:
+    name: Relative modulation
+  flame_on:
+    name: Flame
+  ch_active:
+    name: Central heating active
+  dhw_active:
+    name: Hot water active
+  fault_indication:
+    name: Boiler fault
+  display_active:
+    name: iSense display active

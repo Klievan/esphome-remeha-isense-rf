@@ -1,0 +1,35 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Codec unit tests
+        run: c++ -std=c++17 -Wall -Wextra -Werror -o /tmp/t tests/test_remeha_frame.cpp && /tmp/t
+      - name: Reference decoder self-test
+        run: python3 tools/sniffer/decode.py
+
+  esphome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install esphome==2026.6.5
+      - name: Compile example with local component and dummy secrets
+        run: |
+          mkdir -p ci && cd ci
+          sed -e "s#- source: github://Klievan/esphome-remeha-isense-rf@main.*#- source: {type: local, path: ../components}#" \
+              -e 's/# display_template: !secret/display_template: !secret/' \
+              ../examples/lilygo-t-beam-v1.2.yaml > device.yaml
+          cat > secrets.yaml <<'S'
+          wifi_ssid: "ci"
+          wifi_password: "ci-password"
+          api_encryption_key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+          ota_password: "ci"
+          remeha_display_template: "9D2E09896916C76AABFF9CF1270AE436494B87C6009000040000"
+          S
+          esphome compile device.yaml
